@@ -1,82 +1,82 @@
 #include "NEGAA.h"
 
-//���̒�`
-#define slnum 20//��̐�
-#define plx1 10//x���𐳂Ɉړ�����̐�
-#define plx2 20//x���𕉂Ɉړ�����̐�
-#define ply1 30//�����𐳂Ɉړ�����̐�
-#define ply2 40//�����𕉂Ɉړ�����̐�
-#define plz1 50//�����𐳂Ɉړ�����̐�
-#define plz2 60//�����𕉂Ɉړ�����̐�
-#define pl 70//�Î~���Ă���̐�
-#define plyaw 80//�����ɉ�]����̐�
-#define pldt 130//��Q���̔̐�
-#define plnum 130//�̑���
-#define boxnum 5//���̑���
-#define linum 5//���C�g�̐�
-#define fontnum 10//�t�H���g���b�V���̐�
+//数の定義
+#define slnum 20//坂の数
+#define plx1 10//x軸を正に移動する板の数
+#define plx2 20//x軸を負に移動する板の数
+#define ply1 30//ｙ軸を正に移動する板の数
+#define ply2 40//ｙ軸を負に移動する板の数
+#define plz1 50//ｚ軸を正に移動する板の数
+#define plz2 60//ｚ軸を負に移動する板の数
+#define pl 70//静止している板の数
+#define plyaw 80//ｚ軸に回転する板の数
+#define pldt 130//障害物の板の数
+#define plnum 130//板の総数
+#define boxnum 5//箱の総数
+#define linum 5//ライトの数
+#define fontnum 10//フォントメッシュの数
 
 
-//�����b�V��
-XMESH human;//����L����
-XMESH humanhead;//����L�����̓�
-XMESH humandraw;//��ʂɕ`�ʂ��鑀��L����
-XMESH humot1;//����L�����̃��[�V�����i�O���j
-XMESH humot2;//����L�����̃��[�V�����i����j
-XMESH humot3;//����L�����̃��[�V�����i�����j
-XMESH humot4;//����L�����̃��[�V�����i�E���j
-XMESH ground;//�X�e�[�W
-XMESH slope[slnum];//��
-XMESH plate[plnum];//��
-XMESH missile;//�~�T�C��
-XMESH box[boxnum];//��
+//ｘメッシュ
+XMESH human;//操作キャラ
+XMESH humanhead;//操作キャラの頭
+XMESH humandraw;//画面に描写する操作キャラ
+XMESH humot1;//操作キャラのモーション（前方）
+XMESH humot2;//操作キャラのモーション（後方）
+XMESH humot3;//操作キャラのモーション（左方）
+XMESH humot4;//操作キャラのモーション（右方）
+XMESH ground;//ステージ
+XMESH slope[slnum];//坂
+XMESH plate[plnum];//板
+XMESH missile;//ミサイル
+XMESH box[boxnum];//箱
 
-//�ϐ�
-int i=0;//���������̃J�E���g
-int t=0;//�Q�[�����̎���
-int jump=0;//�W�����v�̃J�E���g
-int jtime=0;//�W�����v�̎���
-int frame;//���[�V�������̃t���[����
-int cut=50;//1���[�V����������̃t���[����
-int remun=9;//�c�莞�ԁi���j
-int resec=59;//�c�莞�ԁi�b�j
-int mission=0;//�~�b�V�����\���̃J�E���g
-int ope=0;//��������\���̃J�E���g
-int sw[boxnum];//���̃X�C�b�`
+//変数
+int i=0;//反復処理のカウント
+int t=0;//ゲーム内の時間
+int jump=0;//ジャンプのカウント
+int jtime=0;//ジャンプの時間
+int frame;//モーション中のフレーム数
+int cut=50;//1モーションあたりのフレーム数
+int remun=9;//残り時間（分）
+int resec=59;//残り時間（秒）
+int mission=0;//ミッション表示のカウント
+int ope=0;//操作説明表示のカウント
+int sw[boxnum];//箱のスイッチ
 
-float sp1=0.1;//�ړ�����̃X�s�[�h
-float sp2=0.01;//�ړ�����̃X�s�[�h
-float ang=0;//��]�̊p�x
-float dt=0.2;//�����蔻��̋���
-float disx[10];//����L�����Ɣ�x���̋���
-float disz[10];//����L�����Ɣ̂����̋���
-float lumi=0.5;//���̋���
+float sp1=0.1;//移動する板のスピード
+float sp2=0.01;//移動する板のスピード
+float ang=0;//回転の角度
+float dt=0.2;//当たり判定の距離
+float disx[10];//操作キャラと板のx軸の距離
+float disz[10];//操作キャラと板のｚ軸の距離
+float lumi=0.5;//光の強さ
 
-//�x�N�g��
-D3DXVECTOR3 vNormal;//�A�h���X
-D3DXVECTOR3 vDir;//����
-D3DXVECTOR3 iner(0,0,0);//����
-D3DXVECTOR3 vGrav(0,-0.05,0);//�d��
-D3DXVECTOR3 vJump(0,0.15,0);//�W�����v
-D3DXVECTOR3 deltaX[plnum];//��x���ړ�
-D3DXVECTOR3 deltaY[plnum];//��y���ړ�
-D3DXVECTOR3 deltaZ[plnum];//��z���ړ�
-D3DXVECTOR3 Slip(D3DXVECTOR3* L,D3DXVECTOR3* N);//����
+//ベクトル
+D3DXVECTOR3 vNormal;//アドレス
+D3DXVECTOR3 vDir;//方向
+D3DXVECTOR3 iner(0,0,0);//慣性
+D3DXVECTOR3 vGrav(0,-0.05,0);//重力
+D3DXVECTOR3 vJump(0,0.15,0);//ジャンプ
+D3DXVECTOR3 deltaX[plnum];//板のx軸移動
+D3DXVECTOR3 deltaY[plnum];//板のy軸移動
+D3DXVECTOR3 deltaZ[plnum];//板のz軸移動
+D3DXVECTOR3 Slip(D3DXVECTOR3* L,D3DXVECTOR3* N);//滑り
 
-RAY_COLLIDE cl;//���C����
-RAY_COLLIDE cl2;//���C����
-DISTANT_LIGHT DLight[linum];//�������C�g
-POINT_LIGHT PLight;//�������C�g
-DWORD robotbgm=0;//�X�e�[�WBGM
-DWORD jumpse=0;//�����Ղ�SE
-DWORD boxse=0;//����SE
-FONT font;//�t�H���g
-FONTMESH fm[fontnum];//�t�H���g���b�V��
+RAY_COLLIDE cl;//レイ判定
+RAY_COLLIDE cl2;//レイ判定
+DISTANT_LIGHT DLight[linum];//方向ライト
+POINT_LIGHT PLight;//方向ライト
+DWORD robotbgm=0;//ステージBGM
+DWORD jumpse=0;//じゃんぷのSE
+DWORD boxse=0;//箱のSE
+FONT font;//フォント
+FONTMESH fm[fontnum];//フォントメッシュ
 
-
+//一度だけ実行される関数
 void MY_NEGAA::OneTime()
 {	
-	//�����b�V���̓ǂݍ���
+	//ｘメッシュの読み込み
 	human.Load("X_file/RobotA_still_back.x");
 	human.vPos=D3DXVECTOR3(0,0.2,0);
 
@@ -119,7 +119,7 @@ void MY_NEGAA::OneTime()
 		box[i].vPos=D3DXVECTOR3(0,-40,0);
 	}
 	
-	//�P�K�̍�̍��W
+	//１階の坂の座標
 	slope[0].vPos=D3DXVECTOR3(0,0,10);
 	slope[1].vPos=D3DXVECTOR3(0,2.37,20.4);
 	slope[2].vPos=D3DXVECTOR3(0,4.74,30.8);
@@ -128,7 +128,7 @@ void MY_NEGAA::OneTime()
 	slope[4].vPos=D3DXVECTOR3(0,4.71,71.2);
 	slope[4].RotateYaw(180);
 
-	//�Q�K�̍�̍��W
+	//２階の坂の座標
 	slope[5].vPos=D3DXVECTOR3(0,22,70);
 	slope[5].RotateRoll(180);
 	slope[5].RotateYaw(90);
@@ -154,10 +154,10 @@ void MY_NEGAA::OneTime()
 	slope[14].scale=3.0;
 	slope[14].RotateYaw(-90);
 	
-	//��1
+	//箱1
 	box[0].vPos=D3DXVECTOR3(-1,10,35);
 
-	//�P�K�̔̍��W
+	//１階の板の座標
 	plate[40].vPos=D3DXVECTOR3(0,7.2,36);
 	plate[40].scale=3.0;
 
@@ -168,20 +168,20 @@ void MY_NEGAA::OneTime()
 	plate[67].vPos=D3DXVECTOR3(0,7.2,82);
 	plate[67].scale=3.0;
 
-	//��2
+	//箱2
 	box[1].vPos=D3DXVECTOR3(0,10,82);
 
-	//�Q�K�ւ̔̍��W
+	//２階への板の座標
 	plate[20].vPos=D3DXVECTOR3(0,7.2,76);
 	plate[20].scale=3.0;
 
 	plate[30].vPos=D3DXVECTOR3(0,22.2,73);
 	plate[30].scale=3.0;
 
-	//��3
+	//箱3
 	box[2].vPos=D3DXVECTOR3(0,28.2,65);
 
-	//�Q�K�̔̍��W
+	//２階の板の座標
 	plate[68].vPos=D3DXVECTOR3(0,25.2,65);
 	plate[68].scale=3.0;
 
@@ -213,7 +213,7 @@ void MY_NEGAA::OneTime()
 	plate[115].scale=3.0;
 	plate[115].RotatePitch(90);
 
-	//��4
+	//箱4
 	box[3].vPos=D3DXVECTOR3(-64,25.2,4);
 
 	plate[50].vPos=D3DXVECTOR3(-64.5,22.2,-4);
@@ -285,7 +285,7 @@ void MY_NEGAA::OneTime()
 	plate[75].vPos=D3DXVECTOR3(72,22.2,-64);
 	plate[75].scale=10.0;
 
-	//��5
+	//箱5
 	box[4].vPos=D3DXVECTOR3(75,25.2,-64);
 
 	plate[42].vPos=D3DXVECTOR3(69,22.2,-49);
@@ -411,11 +411,11 @@ void MY_NEGAA::OneTime()
 	plate[106].scale=3.0;
 	plate[106].RotatePitch(90);
 
-	//�t�H���g
+	//フォント
 	font.Load("arial",20,30,D3DCOLOR_XRGB(0,255,255));
 	for(i=0; i<fontnum; i++)
 	{
-		fm[i].Load(L"��");
+		fm[i].Load(L"→");
 		fm[i].vPos=D3DXVECTOR3(0,-20,0);
 	}
 	fm[0].vPos=D3DXVECTOR3(0,25,70);
@@ -426,22 +426,23 @@ void MY_NEGAA::OneTime()
 	fm[3].vPos=D3DXVECTOR3(75,25,-55);
 	fm[3].RotateYaw(-90);
 	
-	//���̓ǂݍ���
+	//音の読み込み
 	LoadSound(&robotbgm,"wav/robotbgm.wav",0,0,true);
 	LoadSound(&jumpse,"wav/jump.wav",0,0,true);
 	LoadSound(&boxse,"wav/box.wav",0,0,true);
 
-	//�J����
+	//カメラ
 	Camera.SetPosition(0,1,0);
 
-	//���C�g�̊p�x
+	//ライトの角度
 	Light.SetAngle(0,90,0);
 
-	//����L�����̃��C�g�̋P�x
+	//操作キャラのライトの輝度
 	PLight.SetLuminance(lumi);
 
 }
 
+//毎回実行されるメイン関数
 void MY_NEGAA::Main()
 {
 	//BGM
@@ -450,10 +451,10 @@ void MY_NEGAA::Main()
 		Play(robotbgm,true);
 	}
 
-	//�ړI
+	//目的
 	if(mission%2==0 && t>0)
 	{
-		MessageBox(0,"�~�b�V�����F\n\n�E�~�T�C���̔��˂��~�߂�\n�E�~�T�C���ւ̓��؂͖ڂ̑O�̊K�i���瓹�Ȃ�ɂ܂�������\n�E��]����L���[�u�����ƐV���ȑ��ꂪ�o��\n\n���̃E�B���h�E�����FENTER","",MB_OK);
+		MessageBox(0,"ミッション：\n\n・ミサイルの発射を止めろ\n・ミサイルへの道筋は目の前の階段から道なりにまっすぐだ\n・回転するキューブを取ると新たな足場が出る\n\nこのウィンドウを閉じる：ENTER","",MB_OK);
 		mission++;
 	}
 
@@ -462,10 +463,10 @@ void MY_NEGAA::Main()
 		mission++;
 	}
 
-	//�������
+	//操作説明
 	if(ope%2==0 && t>0)
 	{
-		MessageBox(0,"��������F\n\n�E�O�i�FW�@�E���_�ύX�i���j�F���iPGUP�j�@�E�W�����v�FSPACE\n�E���i�FA�@ �E���ɐ���@�@�@�@�F���iHOME�j\n�E�E�i�FD�@ �E�E�֐���@�@�@�@�F���iEND�j\n�E��i�FS�@ �E���_�ύX�i����j�F���iPGDN�j\n\n���̃E�B���h�E�����FENTER","",MB_OK);
+		MessageBox(0,"操作説明：\n\n・前進：W　・視点変更（上空）：↑（PGUP）　・ジャンプ：SPACE\n・左進：A　 ・左に旋回　　　　：←（HOME）\n・右進：D　 ・右へ旋回　　　　：→（END）\n・後進：S　 ・視点変更（後方）：↓（PGDN）\n\nこのウィンドウを閉じる：ENTER","",MB_OK);
 		ope++;
 	}
 
@@ -475,35 +476,35 @@ void MY_NEGAA::Main()
 	}
 
 
-	//�t�H���g
+	//フォント
 	char moji[100];
-	sprintf(moji,"�~�T�C�����˂܂ł���:%2d��:%2d�b\n�~�b�V�����FM\n��������@�FO",remun-(t/3600)%3600,resec-(t/60)%60);
+	sprintf(moji,"ミサイル発射まであと:%2d分:%2d秒\nミッション：M\n操作説明　：O",remun-(t/3600)%3600,resec-(t/60)%60);
 
 	font.vPos=D3DXVECTOR2(30,20);
 	font.Draw(moji);
 
-	//�Q�[���I�[�o�[
+	//ゲームオーバー
 	if(remun-(t/3600)%3600==0 && resec-(t/60)%60<0)
 	{
-		MessageBox(0,"�Q�[���I�|�o�[","",MB_OK);//�Q�[���I�[�o�[�\��
-		PostQuitMessage(0);//�Q�[���I��
+		MessageBox(0,"ゲームオ－バー","",MB_OK);//ゲームオーバー表示
+		PostQuitMessage(0);//ゲーム終了
 	}
 
-	//�����x�N�g��
+	//方向ベクトル
 	vDir=D3DXVECTOR3(0,0,0);
 
-	//�d��
+	//重力
 	vDir+=vGrav;
 
-	//����L�����̃��C�g
+	//操作キャラのライト
 	PLight.vPos=human.vPos;
 	PLight.vPos.y+=1.7;
 
-	//�`�ʂ��鑀��L����
+	//描写する操作キャラ
 	humandraw.vPos=human.vPos;
 	humandraw.vPos.y=human.vPos.y-0.2;
 
-	//����L�����̃��[�V����
+	//操作キャラのモーション
 	humot1.vPos=human.vPos;
 	humot1.vPos.y=human.vPos.y-0.2;
 	humot2.vPos=human.vPos;
@@ -513,7 +514,7 @@ void MY_NEGAA::Main()
 	humot4.vPos=human.vPos;
 	humot4.vPos.y=human.vPos.y-0.2;
 
-	//����L�����̈ړ�
+	//操作キャラの移動
 	if(Key(DIK_W))
 	{
 		vDir+=D3DXVECTOR3(0,0,0.05);
@@ -603,7 +604,7 @@ void MY_NEGAA::Main()
 		humandraw.Draw();
 	}
 
-	//�l�Ԃ���]
+	//人間を回転
 	if(Key(DIK_LEFT))
 	{
 		human.RotateYaw(-2);
@@ -623,7 +624,7 @@ void MY_NEGAA::Main()
 		humot4.RotateYaw(2);
 	}	
 
-	//�W�����v
+	//ジャンプ
 	if(Key(DIK_SPACE) && jump==0 )
 	{
 		jump=1;
@@ -631,15 +632,15 @@ void MY_NEGAA::Main()
 		Play(jump,false);
 	}
 
-	//�W�����v��
+	//ジャンプ中
 	if(jump==1)
 	{
 		human.MoveWorld(iner.x,iner.y,iner.z);
 		jtime+=1;
-		if(jtime>60)//���~
+		if(jtime>60)//下降
 		{
 			//vDir+=D3DXVECTOR3(0,-0.05,0);
-		}else{//�㏸
+		}else{//上昇
 			vDir+=vJump;
 		}
 	}
@@ -652,10 +653,10 @@ void MY_NEGAA::Main()
 		}
 	}
 
-	//���삩��̈ړ��ɑ΂��ăJ��������荞�܂���
+	//操作からの移動に対してカメラを回り込ませる
 	D3DXVec3TransformCoord(&vDir,&vDir,&human.mOrientation);
 
-	//���̃��[�V����
+	//箱のモーション
 	for(i=0;i<boxnum;i++)
 	{
 		box[i].RotatePitch(1);
@@ -663,33 +664,33 @@ void MY_NEGAA::Main()
 		box[i].RotateYaw(1);
 	}
 
-	//���C����@�i������ �n�ʃ��b�V���Ƃ̔���j
+	//レイ判定　（下方向 地面メッシュとの判定）
 	cl=CollideEx(&human.vPos,&vGrav,NULL,&ground,&vNormal,NULL);
 	if(cl.boHit)
 	{
-		if(cl.fLength<=0.2)//�n�ʂƂ̋��������ȉ��Ȃ�
+		if(cl.fLength<=0.2)//地面との距離が一定以下なら
 		{			
-			vDir+=-vGrav;//��Ɏ����グ��
+			vDir+=-vGrav;//上に持ち上げる
 			iner.x=0;
 			iner.y=0;
 			iner.z=0;
 		}
 
-		if(jump==1 && cl.fLength<=0.2)//���n�̔���
+		if(jump==1 && cl.fLength<=0.2)//着地の判定
 		{
 			jump=0;
 		}
 	}
 
-	//���C����	(�O�� �⃁�b�V���Ƃ̔���j
+	//レイ判定	(前方 坂メッシュとの判定）
 	for(i=0; i<slnum;i++)
 	{
 		cl=CollideEx(&human.vPos,&vDir,NULL,&slope[i],&vNormal,NULL);
 		if(cl.boHit)
 		{		
-			if(cl.fLength<=0.4)//�����������苗�����Ȃ瓖����ɂ���
+			if(cl.fLength<=0.4)//距離が当たり距離内なら当たりにする
 			{			
-				vDir=Slip(&vDir,&vNormal);//����x�N�g�����v�Z
+				vDir=Slip(&vDir,&vNormal);//滑りベクトルを計算
 				iner.x=0;
 				iner.y=0;
 				iner.z=0;
@@ -704,7 +705,7 @@ void MY_NEGAA::Main()
 			}
 		}
 	}
-	//���C����	(�O�� �⃁�b�V���Ƃ̔���j
+	//レイ判定	(前方 坂メッシュとの判定）
 	for(i=0; i<slnum;i++)
 	{
 		humanhead.vPos=human.vPos;
@@ -712,9 +713,9 @@ void MY_NEGAA::Main()
 		cl=CollideEx(&humanhead.vPos,&vDir,NULL,&slope[i],&vNormal,NULL);
 		if(cl.boHit)
 		{		
-			if(cl.fLength<=0.2)//�����������苗�����Ȃ瓖����ɂ���
+			if(cl.fLength<=0.2)//距離が当たり距離内なら当たりにする
 			{			
-				vDir=Slip(&vDir,&vNormal);//����x�N�g�����v�Z
+				vDir=Slip(&vDir,&vNormal);//滑りベクトルを計算
 				iner.x=0;
 				iner.y=0;
 				iner.z=0;
@@ -730,13 +731,13 @@ void MY_NEGAA::Main()
 		}
 	}
 
-	//���C����	(�O�� �⃁�b�V���Ƃ̔���j
+	//レイ判定	(前方 坂メッシュとの判定）
 	for(i=0; i<slnum;i++)
 	{
 		cl=CollideEx(&human.vPos,&iner,NULL,&slope[i],&vNormal,NULL);
 		if(cl.boHit)
 		{		
-			if(cl.fLength<=0.4)//�����������苗�����Ȃ瓖����ɂ���
+			if(cl.fLength<=0.4)//距離が当たり距離内なら当たりにする
 			{			
 				iner.x=0;
 				iner.y=0;
@@ -752,7 +753,7 @@ void MY_NEGAA::Main()
 			}
 		}
 	}
-	//���C����	(�O�� �⃁�b�V���Ƃ̔���j
+	//レイ判定	(前方 坂メッシュとの判定）
 	for(i=0; i<slnum;i++)
 	{
 		humanhead.vPos=human.vPos;
@@ -760,7 +761,7 @@ void MY_NEGAA::Main()
 		cl=CollideEx(&humanhead.vPos,&iner,NULL,&slope[i],&vNormal,NULL);
 		if(cl.boHit)
 		{		
-			if(cl.fLength<=0.2)//�����������苗�����Ȃ瓖����ɂ���
+			if(cl.fLength<=0.2)//距離が当たり距離内なら当たりにする
 			{			
 				iner.x=0;
 				iner.y=0;
@@ -777,15 +778,15 @@ void MY_NEGAA::Main()
 		}
 	}
 
-	//���C����@�i�������@�⃁�b�V���Ƃ̔���j
+	//レイ判定　（下方向　坂メッシュとの判定）
 	for(i=0; i<slnum;i++)
 	{
 		cl=CollideEx(&human.vPos,&vGrav,NULL,&slope[i],&vNormal,NULL);
 		if(cl.boHit)
 		{		
-			if(cl.fLength<=0.2)//�n�ʂƂ̋��������ȉ��Ȃ�
+			if(cl.fLength<=0.2)//地面との距離が一定以下なら
 			{			
-				vDir+=-vGrav;//��Ɏ����グ��
+				vDir+=-vGrav;//上に持ち上げる
 				iner.x=0;
 				iner.y=0;
 				iner.z=0;
@@ -798,7 +799,7 @@ void MY_NEGAA::Main()
 					}
 				}
 			}
-			if(jump==1 && cl.fLength<=0.4)//���n�̔���
+			if(jump==1 && cl.fLength<=0.4)//着地の判定
 			{
 				jump=0;
 			}
@@ -806,7 +807,7 @@ void MY_NEGAA::Main()
 		}
 	}
 
-	//���C����@�i������@�⃁�b�V���Ƃ̔���j
+	//レイ判定　（上方向　坂メッシュとの判定）
 	for(i=0; i<slnum;i++)
 	{
 		humanhead.vPos=human.vPos;
@@ -814,9 +815,9 @@ void MY_NEGAA::Main()
 		cl=CollideEx(&humanhead.vPos,&vGrav,NULL,&slope[i],&vNormal,NULL);
 		if(cl.boHit)
 		{
-			if(cl.fLength<=0.2)//�v���[�g�Ƃ̋��������ȉ��Ȃ�
+			if(cl.fLength<=0.2)//プレートとの距離が一定以下なら
 			{			
-				vDir+=-vGrav-vJump;//���Ɏ����グ��
+				vDir+=-vGrav-vJump;//下に持ち上げる
 				iner.x=0;
 				iner.y=0;
 				iner.z=0;
@@ -835,175 +836,175 @@ void MY_NEGAA::Main()
 	}
 	
 
-	//���C����@�i�������@���b�V���Ƃ̔���j
+	//レイ判定　（下方向　板メッシュとの判定）
 	for(i=0; i<plx1;i++)
 	{
 		cl=CollideEx(&human.vPos,&vGrav,NULL,&plate[i],&vNormal,NULL);
 		if(cl.boHit)
 		{
-			if(cl.fLength<=0.2)//�n�ʂƂ̋��������ȉ��Ȃ�
+			if(cl.fLength<=0.2)//地面との距離が一定以下なら
 			{			
-				vDir+=-vGrav+deltaX[i];//��Ɏ����グ��
+				vDir+=-vGrav+deltaX[i];//上に持ち上げる
 				iner.x=deltaX[i].x;
 				iner.y=0;
 				iner.z=0;
 			}	
-			if(jump==1 && cl.fLength<=0.2)//���n�̔���
+			if(jump==1 && cl.fLength<=0.2)//着地の判定
 			{
 				jump=0;
 			}
 		}
 	}
 
-	//���C����@�i�������@���b�V���Ƃ̔���j
+	//レイ判定　（下方向　板メッシュとの判定）
 	for(i=plx1; i<plx2;i++)
 	{
 		cl=CollideEx(&human.vPos,&vGrav,NULL,&plate[i],&vNormal,NULL);
 		if(cl.boHit)
 		{
-			if(cl.fLength<=0.2)//�n�ʂƂ̋��������ȉ��Ȃ�
+			if(cl.fLength<=0.2)//地面との距離が一定以下なら
 			{			
-				vDir+=-vGrav-deltaX[i];//��Ɏ����グ��
+				vDir+=-vGrav-deltaX[i];//上に持ち上げる
 				iner.x=-deltaX[i].x;
 				iner.y=0;
 				iner.z=0;
 			}	
-			if(jump==1 && cl.fLength<=0.2)//���n�̔���
+			if(jump==1 && cl.fLength<=0.2)//着地の判定
 			{
 				jump=0;
 			}
 		}
 	}
 
-	//���C����@�i�������@���b�V���Ƃ̔���j
+	//レイ判定　（下方向　板メッシュとの判定）
 	for(i=plx2; i<ply1;i++)
 	{
 		cl=CollideEx(&human.vPos,&vGrav,NULL,&plate[i],&vNormal,NULL);
 		if(cl.boHit)
 		{
-			if(cl.fLength<=0.2)//�n�ʂƂ̋��������ȉ��Ȃ�
+			if(cl.fLength<=0.2)//地面との距離が一定以下なら
 			{			
-				vDir+=-vGrav+deltaY[i];//��Ɏ����グ��
+				vDir+=-vGrav+deltaY[i];//上に持ち上げる
 				iner.x=0;
 				iner.y=deltaY[i].y;
 				iner.z=0;
 			}	
-			if(jump==1 && cl.fLength<=0.2)//���n�̔���
+			if(jump==1 && cl.fLength<=0.2)//着地の判定
 			{
 				jump=0;
 			}
 		}
 	}
 
-	//���C����@�i�������@���b�V���Ƃ̔���j
+	//レイ判定　（下方向　板メッシュとの判定）
 	for(i=ply1; i<ply2;i++)
 	{
 		cl=CollideEx(&human.vPos,&vGrav,NULL,&plate[i],&vNormal,NULL);
 		if(cl.boHit)
 		{
-			if(cl.fLength<=0.2)//�n�ʂƂ̋��������ȉ��Ȃ�
+			if(cl.fLength<=0.2)//地面との距離が一定以下なら
 			{			
-				vDir+=-vGrav-deltaY[i];//��Ɏ����グ��
+				vDir+=-vGrav-deltaY[i];//上に持ち上げる
 				iner.x=0;
 				iner.y=-deltaY[i].y;
 				iner.z=0;
 			}	
-			if(jump==1 && cl.fLength<=0.2)//���n�̔���
+			if(jump==1 && cl.fLength<=0.2)//着地の判定
 			{
 				jump=0;
 			}
 		}
 	}
 
-	//���C����@�i�������@���b�V���Ƃ̔���j
+	//レイ判定　（下方向　板メッシュとの判定）
 	for(i=ply2; i<plz1;i++)
 	{
 		cl=CollideEx(&human.vPos,&vGrav,NULL,&plate[i],&vNormal,NULL);
 		if(cl.boHit)
 		{
-			if(cl.fLength<=0.2)//�n�ʂƂ̋��������ȉ��Ȃ�
+			if(cl.fLength<=0.2)//地面との距離が一定以下なら
 			{			
-				vDir+=-vGrav+deltaZ[i];//��Ɏ����グ��
+				vDir+=-vGrav+deltaZ[i];//上に持ち上げる
 				iner.x=0;
 				iner.y=0;
 				iner.z=deltaZ[i].z;
 			}	
-			if(jump==1 && cl.fLength<=0.2)//���n�̔���
+			if(jump==1 && cl.fLength<=0.2)//着地の判定
 			{
 				jump=0;
 			}
 		}
 	}
 
-	//���C����@�i�������@���b�V���Ƃ̔���j
+	//レイ判定　（下方向　板メッシュとの判定）
 	for(i=plz1; i<plz2;i++)
 	{
 		cl=CollideEx(&human.vPos,&vGrav,NULL,&plate[i],&vNormal,NULL);
 		if(cl.boHit)
 		{
-			if(cl.fLength<=0.2)//�n�ʂƂ̋��������ȉ��Ȃ�
+			if(cl.fLength<=0.2)//地面との距離が一定以下なら
 			{			
-				vDir+=-vGrav-deltaZ[i];//��Ɏ����グ��
+				vDir+=-vGrav-deltaZ[i];//上に持ち上げる
 				iner.x=0;
 				iner.y=0;
 				iner.z=-deltaZ[i].z;
 			}	
-			if(jump==1 && cl.fLength<=0.2)//���n�̔���
+			if(jump==1 && cl.fLength<=0.2)//着地の判定
 			{
 				jump=0;
 			}
 		}
 	}
 
-	//���C����@�i�������@���b�V���Ƃ̔���j
+	//レイ判定　（下方向　板メッシュとの判定）
 	for(i=plz2; i<pl;i++)
 	{
 		cl=CollideEx(&human.vPos,&vGrav,NULL,&plate[i],&vNormal,NULL);
 		if(cl.boHit)
 		{
-			if(cl.fLength<=0.2)//�n�ʂƂ̋��������ȉ��Ȃ�
+			if(cl.fLength<=0.2)//地面との距離が一定以下なら
 			{			
-				vDir+=-vGrav;//��Ɏ����グ��
+				vDir+=-vGrav;//上に持ち上げる
 				iner.x=0;
 				iner.y=0;
 				iner.z=0;
 			}	
-			if(jump==1 && cl.fLength<=0.2)//���n�̔���
+			if(jump==1 && cl.fLength<=0.2)//着地の判定
 			{
 				jump=0;
 			}
 		}
 	}
 
-	//���C����@�i�������@���b�V���Ƃ̔���j
+	//レイ判定　（下方向　板メッシュとの判定）
 	for(i=pl; i<plyaw;i++)
 	{
 		cl=CollideEx(&human.vPos,&vGrav,NULL,&plate[i],&vNormal,NULL);
 		if(cl.boHit)
 		{
-			if(cl.fLength<=0.2)//�n�ʂƂ̋��������ȉ��Ȃ�
+			if(cl.fLength<=0.2)//地面との距離が一定以下なら
 			{			
-				vDir+=-vGrav+deltaX[i]+deltaZ[i];//��Ɏ����グ��
+				vDir+=-vGrav+deltaX[i]+deltaZ[i];//上に持ち上げる
 				iner.x=0;
 				iner.y=0;
 				iner.z=0;
 			}	
-			if(jump==1 && cl.fLength<=0.2)//���n�̔���
+			if(jump==1 && cl.fLength<=0.2)//着地の判定
 			{
 				jump=0;
 			}
 		}
 	}
 
-	//���C����	(�O�� �⃁�b�V���Ƃ̔���j
+	//レイ判定	(前方 坂メッシュとの判定）
 	for(i=plyaw; i<pldt;i++)
 	{
 		cl=CollideEx(&human.vPos,&vDir,NULL,&plate[i],&vNormal,NULL);
 		if(cl.boHit)
 		{		
-			if(cl.fLength<=dt)//�����������苗�����Ȃ瓖����ɂ���
+			if(cl.fLength<=dt)//距離が当たり距離内なら当たりにする
 			{			
-				vDir-=vDir*2;//����x�N�g�����v�Z
+				vDir-=vDir*2;//滑りベクトルを計算
 				iner.x=0;
 				iner.y=0;
 				iner.z=0;
@@ -1019,7 +1020,7 @@ void MY_NEGAA::Main()
 		}
 	}
 	
-	//���C����	(�O�� �⃁�b�V���Ƃ̔���j
+	//レイ判定	(前方 坂メッシュとの判定）
 	for(i=plyaw; i<pldt;i++)
 	{
 		humanhead.vPos=human.vPos;
@@ -1027,9 +1028,9 @@ void MY_NEGAA::Main()
 		cl=CollideEx(&humanhead.vPos,&vDir,NULL,&plate[i],&vNormal,NULL);
 		if(cl.boHit)
 		{		
-			if(cl.fLength<=dt)//�����������苗�����Ȃ瓖����ɂ���
+			if(cl.fLength<=dt)//距離が当たり距離内なら当たりにする
 			{			
-				vDir-=vDir*2;//����x�N�g�����v�Z
+				vDir-=vDir*2;//滑りベクトルを計算
 				iner.x=0;
 				iner.y=0;
 				iner.z=0;
@@ -1045,25 +1046,25 @@ void MY_NEGAA::Main()
 		}
 	}
 
-	//���C����	(�O�� �~�T�C�����b�V���Ƃ̔���j
+	//レイ判定	(前方 ミサイルメッシュとの判定）
 	
 	cl=CollideEx(&human.vPos,&vDir,NULL,&missile,&vNormal,NULL);
 	if(cl.boHit)
 	{
-		if(cl.fLength<=0.2)//�����������苗�����Ȃ瓖����ɂ���
+		if(cl.fLength<=0.2)//距離が当たり距離内なら当たりにする
 		{
-			MessageBox(0,"�Q�[���N���A","",MB_OK);
+			MessageBox(0,"ゲームクリア","",MB_OK);
 			PostQuitMessage(0);
 		}
 	}
 
-	//���C����	(�O�� �⃁�b�V���Ƃ̔���j
+	//レイ判定	(前方 坂メッシュとの判定）
 	for(i=plyaw; i<pldt;i++)
 	{
 		cl=CollideEx(&human.vPos,&iner,NULL,&plate[i],&vNormal,NULL);
 		if(cl.boHit)
 		{		
-			if(cl.fLength<=dt)//�����������苗�����Ȃ瓖����ɂ���
+			if(cl.fLength<=dt)//距離が当たり距離内なら当たりにする
 			{			
 				iner.x=0;
 				iner.y=0;
@@ -1080,7 +1081,7 @@ void MY_NEGAA::Main()
 		}
 	}
 	
-	//���C����	(�O�� �⃁�b�V���Ƃ̔���j
+	//レイ判定	(前方 坂メッシュとの判定）
 	for(i=plyaw; i<pldt;i++)
 	{
 		humanhead.vPos=human.vPos;
@@ -1088,7 +1089,7 @@ void MY_NEGAA::Main()
 		cl=CollideEx(&humanhead.vPos,&iner,NULL,&plate[i],&vNormal,NULL);
 		if(cl.boHit)
 		{		
-			if(cl.fLength<=dt)//�����������苗�����Ȃ瓖����ɂ���
+			if(cl.fLength<=dt)//距離が当たり距離内なら当たりにする
 			{			
 				iner.x=0;
 				iner.y=0;
@@ -1105,19 +1106,19 @@ void MY_NEGAA::Main()
 		}
 	}
 
-	//���C����	(�O�� ���Ƃ̔���j
+	//レイ判定	(前方 箱との判定）
 	for(i=0; i<boxnum;i++)
 	{
 		cl=CollideEx(&human.vPos,&vDir,NULL,&box[i],&vNormal,NULL);
 		if(cl.boHit)
 		{		
-			if(cl.fLength<=0.4)//�����������苗�����Ȃ瓖����ɂ���
+			if(cl.fLength<=0.4)//距離が当たり距離内なら当たりにする
 			{			
 				sw[i]=1;
 			}
 		}
 	}
-	//���C����	(�O�� ���Ƃ̔���j
+	//レイ判定	(前方 箱との判定）
 	for(i=0; i<boxnum;i++)
 	{
 		humanhead.vPos=human.vPos;
@@ -1125,27 +1126,27 @@ void MY_NEGAA::Main()
 		cl=CollideEx(&humanhead.vPos,&vDir,NULL,&box[i],&vNormal,NULL);
 		if(cl.boHit)
 		{		
-			if(cl.fLength<=0.2)//�����������苗�����Ȃ瓖����ɂ���
+			if(cl.fLength<=0.2)//距離が当たり距離内なら当たりにする
 			{			
 				sw[i]=1;
 			}
 		}
 	}
 
-	//���C����@�i�������@���Ƃ̔���j
+	//レイ判定　（下方向　箱との判定）
 	for(i=0; i<boxnum;i++)
 	{
 		cl=CollideEx(&human.vPos,&vGrav,NULL,&box[i],&vNormal,NULL);
 		if(cl.boHit)
 		{		
-			if(cl.fLength<=0.2)//�n�ʂƂ̋��������ȉ��Ȃ�
+			if(cl.fLength<=0.2)//地面との距離が一定以下なら
 			{			
 				sw[i]=1;
 			}
 		}
 	}
 
-	//���C����@�i������@���Ƃ̔���j
+	//レイ判定　（上方向　箱との判定）
 	for(i=0; i<slnum;i++)
 	{
 		humanhead.vPos=human.vPos;
@@ -1153,29 +1154,29 @@ void MY_NEGAA::Main()
 		cl=CollideEx(&humanhead.vPos,&vGrav,NULL,&box[i],&vNormal,NULL);
 		if(cl.boHit)
 		{
-			if(cl.fLength<=0.2)//�v���[�g�Ƃ̋��������ȉ��Ȃ�
+			if(cl.fLength<=0.2)//プレートとの距離が一定以下なら
 			{			
 				sw[i]=1;
 			}
 		}
 	}
 
-	//���C����	(�O�� �~�T�C�����b�V���Ƃ̔���j
+	//レイ判定	(前方 ミサイルメッシュとの判定）
 	
 	cl=CollideEx(&human.vPos,&iner,NULL,&missile,&vNormal,NULL);
 	if(cl.boHit)
 	{
-		if(cl.fLength<=0.2)//�����������苗�����Ȃ瓖����ɂ���
+		if(cl.fLength<=0.2)//距離が当たり距離内なら当たりにする
 		{
-			MessageBox(0,"�Q�[���N���A","",MB_OK);//�Q�[���N���A�\��
-			PostQuitMessage(0);//�Q�[���I��
+			MessageBox(0,"ゲームクリア","",MB_OK);//ゲームクリア表示
+			PostQuitMessage(0);//ゲーム終了
 		}
 	}
 
 
  /*
 
-	//���C����@�i������@���b�V���Ƃ̔���j
+	//レイ判定　（上方向　板メッシュとの判定）
 	for(i=0; i<plnum;i++)
 	{
 		humanhead.vPos=human.vPos;
@@ -1183,17 +1184,17 @@ void MY_NEGAA::Main()
 		cl=CollideEx(&humanhead.vPos,&vGrav,NULL,&plate[i],&vNormal,NULL);
 		if(cl.boHit)
 		{
-			if(cl.fLength<=0.2)//�v���[�g�Ƃ̋��������ȉ��Ȃ�
+			if(cl.fLength<=0.2)//プレートとの距離が一定以下なら
 			{			
-				vDir+=-vGrav-vJump;//���Ɏ����グ��
+				vDir+=-vGrav-vJump;//下に持ち上げる
 			}
 		}
 	}
 */
-	//�Q�[�����̎��Ԃ�i�߂�
+	//ゲーム内の時間を進める
 	t+=1;
 
-	//1�K�̔̈ړ�
+	//1階の板の移動
 	plate[40].vPos+=deltaZ[40];
 	if(t%600==0)
 	{
@@ -1205,7 +1206,7 @@ void MY_NEGAA::Main()
 		deltaZ[40].z=sp1;
 	}
 	
-	//2�K�ւ̔̈ړ�
+	//2階への板の移動
 	plate[20].vPos+=deltaY[20];
 	if(t%1050==0)
 	{
@@ -1228,7 +1229,7 @@ void MY_NEGAA::Main()
 		deltaY[30].y=sp2;
 	}
 	
-	//2�K�̔̈ړ�
+	//2階の板の移動
 	plate[10].vPos-=deltaX[10];
 	if(t%900==0)
 	{
@@ -1290,7 +1291,7 @@ void MY_NEGAA::Main()
 		}
 	}
 
-	//���̈ړ�
+	//箱の移動
 	if(t%160>=0 && t%160<20){
 		box[3].vPos.x-=sp1;
 	}
@@ -1304,26 +1305,26 @@ void MY_NEGAA::Main()
 		box[3].vPos.z+=sp1;
 	}
 
-	//���ۂ̈ړ�
+	//実際の移動
 	human.MoveWorld(vDir.x,vDir.y,vDir.z);
 
-	//�J������l�Ԃ̌��ɔz�u�B�����͐l�Ԃ̕��������悤�ɂ���
-	D3DXVECTOR3 v(0,2,-7);//����L�������猩���J�����̈ʒu�x�N�g��
-	if(Key(DIK_UP))//���_�ύX�i�ォ��j
+	//カメラを人間の後ろに配置。方向は人間の方を向くようにする
+	D3DXVECTOR3 v(0,2,-7);//操作キャラから見たカメラの位置ベクトル
+	if(Key(DIK_UP))//視点変更（上から）
 	{
 		v.y+=5;
 	}
-	if(Key(DIK_DOWN))//���_�ύX�i�������j
+	if(Key(DIK_DOWN))//視点変更（後方から）
 	{
 		v.y-=2;
 		v.z-=13;
 	}
-	D3DXVec3TransformCoord(&v,&v,&human.mOrientation);//��]�s��
-	v+=human.vPos;//��]��ɑ���L�����̍��W�𑫂�
-	Camera.SetPosition(v.x,v.y,v.z);//�ʒu�x�N�g�����J�����ɑ��
-	Camera.vLook=human.vPos+D3DXVECTOR3(0,1,0);	//�J�����̌����𑀍�L�����Ɍ�����
+	D3DXVec3TransformCoord(&v,&v,&human.mOrientation);//回転行列
+	v+=human.vPos;//回転後に操作キャラの座標を足す
+	Camera.SetPosition(v.x,v.y,v.z);//位置ベクトルをカメラに代入
+	Camera.vLook=human.vPos+D3DXVECTOR3(0,1,0);	//カメラの向きを操作キャラに向ける
 
-	//���C�g�Ǝ�
+	//ライト照射
 	PLight.Illuminate();
 	/*
 	DLight[0].Illuminate();
@@ -1334,13 +1335,13 @@ void MY_NEGAA::Main()
 	*/
 
 	/*
-	//���C��`��i�{���͕s�v�j
+	//レイを描画（本来は不要）
 	RenderRay(&human.vPos,&vDir,NULL,1000);
 	RenderRay(&humanhead.vPos,&vDir,NULL,1000);
 	RenderRay(&human.vPos,&vGrav,NULL,1000);
 	*/
 
-	//�`��
+	//描画
 	ground.Draw();
 	missile.Draw();
 	for(i=0;i<slnum;i++)
@@ -1385,12 +1386,12 @@ void MY_NEGAA::Main()
 
 D3DXVECTOR3 Slip(D3DXVECTOR3* l,D3DXVECTOR3* n)
 {	  
-	D3DXVECTOR3 L;//���˃x�N�g���i���C�j
-	D3DXVECTOR3 N;//�|���S���̖@��
-	D3DXVECTOR3 S; //����x�N�g���i��������j
+	D3DXVECTOR3 L;//入射ベクトル（レイ）
+	D3DXVECTOR3 N;//ポリゴンの法線
+	D3DXVECTOR3 S; //滑りベクトル（滑る方向）
 	L=*l;
 	N=*n;
-	//����x�N�g�� S=L-(N * L)/(|N|^2)*N
+	//滑りベクトル S=L-(N * L)/(|N|^2)*N
 	S=L - (( D3DXVec3Dot(&N,&L) ) / ( pow(D3DXVec3Length(&N) ,2) ) ) * N;
 
 	return S;
