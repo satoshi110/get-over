@@ -73,15 +73,16 @@ DWORD boxse=0;//箱のSE
 FONT font;//フォント
 FONTMESH fm[fontnum];//フォントメッシュ
 
-//一度だけ実行される関数
+
 void MY_NEGAA::OneTime()
 {	
 	//ｘメッシュの読み込み
 	human.Load("X_file/RobotA_still_back.x");
+	//座標の指定
 	human.vPos=D3DXVECTOR3(0,0.2,0);
-
+	
 	humandraw.Load("X_file/RobotA_still_back.x");
-
+	
 	humot1.Load("X_file/RobotA.x");
 	humot1.RotateYaw(180);
 	humot2.Load("X_file/RobotA.x");
@@ -154,9 +155,6 @@ void MY_NEGAA::OneTime()
 	slope[14].scale=3.0;
 	slope[14].RotateYaw(-90);
 	
-	//箱1
-	box[0].vPos=D3DXVECTOR3(-1,10,35);
-
 	//１階の板の座標
 	plate[40].vPos=D3DXVECTOR3(0,7.2,36);
 	plate[40].scale=3.0;
@@ -168,18 +166,12 @@ void MY_NEGAA::OneTime()
 	plate[67].vPos=D3DXVECTOR3(0,7.2,82);
 	plate[67].scale=3.0;
 
-	//箱2
-	box[1].vPos=D3DXVECTOR3(0,10,82);
-
 	//２階への板の座標
 	plate[20].vPos=D3DXVECTOR3(0,7.2,76);
 	plate[20].scale=3.0;
 
 	plate[30].vPos=D3DXVECTOR3(0,22.2,73);
 	plate[30].scale=3.0;
-
-	//箱3
-	box[2].vPos=D3DXVECTOR3(0,28.2,65);
 
 	//２階の板の座標
 	plate[68].vPos=D3DXVECTOR3(0,25.2,65);
@@ -212,9 +204,6 @@ void MY_NEGAA::OneTime()
 	plate[115].vPos=D3DXVECTOR3(-64.5,23.7,20);
 	plate[115].scale=3.0;
 	plate[115].RotatePitch(90);
-
-	//箱4
-	box[3].vPos=D3DXVECTOR3(-64,25.2,4);
 
 	plate[50].vPos=D3DXVECTOR3(-64.5,22.2,-4);
 	plate[50].scale=3.0;
@@ -285,8 +274,6 @@ void MY_NEGAA::OneTime()
 	plate[75].vPos=D3DXVECTOR3(72,22.2,-64);
 	plate[75].scale=10.0;
 
-	//箱5
-	box[4].vPos=D3DXVECTOR3(75,25.2,-64);
 
 	plate[42].vPos=D3DXVECTOR3(69,22.2,-49);
 	plate[42].scale=3.0;
@@ -411,6 +398,13 @@ void MY_NEGAA::OneTime()
 	plate[106].scale=3.0;
 	plate[106].RotatePitch(90);
 
+	//フラグの箱の座標
+	box[0].vPos=D3DXVECTOR3(-1,10,35);
+	box[1].vPos=D3DXVECTOR3(0,10,82);
+	box[2].vPos=D3DXVECTOR3(0,28.2,65);
+	box[3].vPos=D3DXVECTOR3(-64,25.2,4);
+	box[4].vPos=D3DXVECTOR3(75,25.2,-64);
+
 	//フォント
 	font.Load("arial",20,30,D3DCOLOR_XRGB(0,255,255));
 	for(i=0; i<fontnum; i++)
@@ -442,13 +436,21 @@ void MY_NEGAA::OneTime()
 
 }
 
-//毎回実行されるメイン関数
 void MY_NEGAA::Main()
 {
 	//BGM
 	if(t>1)
 	{
 		Play(robotbgm,true);
+	}
+
+	//フラグの箱を入手した時のSE
+	for(i=0; i<boxnum; i++){
+		if(sw[i]==1){
+			Play(boxse,false);
+			sw[i]=2;
+			box[i].vPos=D3DXVECTOR3(0,-40,0);
+		}
 	}
 
 	//目的
@@ -514,7 +516,7 @@ void MY_NEGAA::Main()
 	humot4.vPos=human.vPos;
 	humot4.vPos.y=human.vPos.y-0.2;
 
-	//操作キャラの移動
+	//操作キャラの移動とモーション
 	if(Key(DIK_W))
 	{
 		vDir+=D3DXVECTOR3(0,0,0.05);
@@ -604,7 +606,7 @@ void MY_NEGAA::Main()
 		humandraw.Draw();
 	}
 
-	//人間を回転
+	//操作キャラの回転
 	if(Key(DIK_LEFT))
 	{
 		human.RotateYaw(-2);
@@ -624,15 +626,16 @@ void MY_NEGAA::Main()
 		humot4.RotateYaw(2);
 	}	
 
-	//ジャンプ
+	//ジャンプの操作
 	if(Key(DIK_SPACE) && jump==0 )
 	{
 		jump=1;
 		jtime=0;
+		//ジャンプのSE
 		Play(jump,false);
 	}
 
-	//ジャンプ中
+	//ジャンプ中の処理
 	if(jump==1)
 	{
 		human.MoveWorld(iner.x,iner.y,iner.z);
@@ -642,14 +645,6 @@ void MY_NEGAA::Main()
 			//vDir+=D3DXVECTOR3(0,-0.05,0);
 		}else{//上昇
 			vDir+=vJump;
-		}
-	}
-
-	for(i=0; i<boxnum; i++){
-		if(sw[i]==1){
-			Play(boxse,false);
-			sw[i]=2;
-			box[i].vPos=D3DXVECTOR3(0,-40,0);
 		}
 	}
 
@@ -1326,16 +1321,9 @@ void MY_NEGAA::Main()
 
 	//ライト照射
 	PLight.Illuminate();
+	
 	/*
-	DLight[0].Illuminate();
-	DLight[1].Illuminate();
-	DLight[2].Illuminate();
-	DLight[3].Illuminate();
-	DLight[4].Illuminate();
-	*/
-
-	/*
-	//レイを描画（本来は不要）
+	//レイを描画
 	RenderRay(&human.vPos,&vDir,NULL,1000);
 	RenderRay(&humanhead.vPos,&vDir,NULL,1000);
 	RenderRay(&human.vPos,&vGrav,NULL,1000);
