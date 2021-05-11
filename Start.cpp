@@ -1,5 +1,5 @@
 #include "NEGAA.h"
-a
+
 //数の定義
 #define slnum 20//坂の数
 #define plx1 10//x軸を正に移動する板の数
